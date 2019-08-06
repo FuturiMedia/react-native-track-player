@@ -79,6 +79,7 @@ public class RNTrackPlayer: RCTEventEmitter {
             "playback-state",
             "playback-error",
             "playback-track-changed",
+            "playback-metadata-recieved",
             
             "remote-stop",
             "remote-pause",
@@ -182,6 +183,10 @@ public class RNTrackPlayer: RCTEventEmitter {
             self?.sendEvent(withName: "playback-error", body: ["error": error?.localizedDescription])
         }
         
+        player.event.updateMetadata.addListener(self) { [weak self] data in
+            self?.sendEvent(withName:"playback-metadata-received", body:data)
+        }
+
         player.event.playbackEnd.addListener(self) { [weak self] reason in
             guard let `self` = self else { return }
 
