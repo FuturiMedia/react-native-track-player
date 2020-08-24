@@ -247,6 +247,10 @@ public class MusicManager implements OnAudioFocusChangeListener {
         service.emit(MusicEvents.PLAYBACK_ERROR, bundle);
     }
 
+    /**
+     * Edited by Futuri to treat LOSS_TRANSIENT as a duck with very quiet volume.
+     * Since our primary use case is live radio streams.
+     */
     @Override
     public void onAudioFocusChange(int focus) {
         Log.d(Utils.LOG, "onDuck");
@@ -255,12 +259,19 @@ public class MusicManager implements OnAudioFocusChangeListener {
         boolean paused = false;
         boolean ducking = false;
 
+        float duckingMultiplier = .5F;
+
         switch(focus) {
             case AudioManager.AUDIOFOCUS_LOSS:
                 permanent = true;
                 abandonFocus();
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                paused = true;
+                if (alwaysPauseOnInterruption) {
+                    paused = true;
+                } else {
+                    duckingMultiplier = .001F;
+                    ducking = true;
+                }
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                 if (alwaysPauseOnInterruption)
@@ -273,7 +284,7 @@ public class MusicManager implements OnAudioFocusChangeListener {
         }
 
         if (ducking) {
-            playback.setVolumeMultiplier(0.5F);
+            playback.setVolumeMultiplier(duckingMultiplier);
             wasDucking = true;
         } else if (wasDucking) {
             playback.setVolumeMultiplier(1.0F);
